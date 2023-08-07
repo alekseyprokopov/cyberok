@@ -1,2 +1,2 @@
 run:
-	cd cmd/cyberok; go run main.go
+	go build ./cmd/cyberok/main.go; ./main
