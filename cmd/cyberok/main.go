@@ -1,23 +1,28 @@
 package main
 
 import (
+	"context"
 	"cyberok/internal/config"
 	"cyberok/internal/http-server/handlers/getFqdn"
 	"cyberok/internal/http-server/handlers/getIp"
 	"cyberok/internal/http-server/handlers/getWhois"
 	"cyberok/internal/http-server/handlers/setFqdn"
 	"cyberok/internal/http-server/handlers/setWhois"
+	"cyberok/internal/lib/api/logger/sl"
 	"cyberok/internal/repository"
 	"cyberok/internal/repository/postgres"
 	"cyberok/internal/resolvers/fqdn"
 	"cyberok/internal/resolvers/whois"
 	"cyberok/internal/service"
+	"cyberok/internal/worker"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/lib/pq"
 	"golang.org/x/exp/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -50,7 +55,8 @@ func main() {
 
 	//services
 	services := service.New(repository, fqdnResolver, whoisResolver)
-
+	updateWorker := worker.NewUpdateWorker(cfg.DB, log, services)
+	updateWorker.Start()
 	//router
 	router := chi.NewRouter()
 
@@ -61,7 +67,6 @@ func main() {
 	router.Post("/fqdn", getFqdn.New(log, services))
 	router.Post("/ip", getIp.New(log, services))
 	router.Post("/whois", getWhois.New(log, services))
-
 	router.Post("/admin/fqdn", setFqdn.New(log, services))
 	router.Post("/admin/whois", setWhois.New(log, services))
 
@@ -74,9 +79,36 @@ func main() {
 		WriteTimeout: cfg.HTTPServer.Timeout,
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
-	if err = srv.ListenAndServe(); err != nil {
-		log.Error("failed to start sever: ", err)
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err = srv.ListenAndServe(); err != nil {
+			log.Error("error occurred on server shutting down: ", err)
+		}
+	}()
+
+	log.Info("server started")
+
+	<-done
+	log.Info("stopping server")
+
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.HTTPServer.StopTimeout)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("failed to stop server", sl.Err(err))
+		return
 	}
+
+	updateWorker.Close()
+
+	if err := db.Close(); err != nil {
+		log.Error("error occurred on db connection close:", sl.Err(err))
+	}
+
+	log.Info("server stopped")
 
 }
 

@@ -140,6 +140,8 @@ func (s *FqdnItemPostgres) GetAll() ([]model.Fqdn, error) {
 
 	var result []model.Fqdn
 	if err = carta.Map(rows, &result); err != nil {
+		fmt.Printf("ERROR %v", err)
+
 		return nil, fmt.Errorf("%s:carta's scan %w", op, err)
 	}
 
@@ -147,14 +149,11 @@ func (s *FqdnItemPostgres) GetAll() ([]model.Fqdn, error) {
 }
 
 func (s *FqdnItemPostgres) TruncateIp() error {
-	const op = "repository.postgres.RemoveIp"
+	const op = "repository.postgres.TruncateIp"
+	q := `TRUNCATE ip`
 
-	stmt, err := s.db.Prepare("TRUNCATE ip")
+	_, err := s.db.Exec(q)
 	if err != nil {
-		return fmt.Errorf("%s: prepare statement: %w", op, err)
-	}
-
-	if _, err = stmt.Exec(); err != nil {
 		return fmt.Errorf("%s:query exec %w", op, err)
 	}
 

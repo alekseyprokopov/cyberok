@@ -32,6 +32,7 @@ type HTTPServerConfig struct {
 	Address     string        `envconfig:"HTTP_SERVER_ADDRESS" env-required:"true"`
 	Timeout     time.Duration `envconfig:"HTTP_SERVER_TIMEOUT" env-required:"true"`
 	IdleTimeout time.Duration `envconfig:"HTTP_SERVER_IDLE_TIMEOUT" env-required:"true"`
+	StopTimeout time.Duration `envconfig:"HTTP_SERVER_STOP_TIMEOUT" env-required:"true"`
 }
 
 type DNSConfig struct {
@@ -41,10 +42,11 @@ type DNSConfig struct {
 }
 
 type DBConfig struct {
-	Host     string `envconfig:"DB_HOST" env-required:"true"`
-	Port     string `envconfig:"DB_PORT" env-required:"true"`
-	DBName   string `envconfig:"DB_NAME" env-required:"true"`
-	Username string `envconfig:"DB_USER" env-required:"true"`
-	Password string `envconfig:"DB_PASSWORD" env-required:"true"`
-	SSLMode  string `envconfig:"DB_SSLMODE" env-required:"true"`
+	Host        string        `envconfig:"DB_HOST" env-required:"true"`
+	Port        string        `envconfig:"DB_PORT" env-required:"true"`
+	DBName      string        `envconfig:"DB_NAME" env-required:"true"`
+	Username    string        `envconfig:"DB_USER" env-required:"true"`
+	Password    string        `envconfig:"DB_PASSWORD" env-required:"true"`
+	SSLMode     string        `envconfig:"DB_SSLMODE" env-required:"true"`
+	UpdateTimer time.Duration `envconfig:"DB_UPDATE_TIMER" env-required:"true"`
 }

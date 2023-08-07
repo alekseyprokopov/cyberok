@@ -34,5 +34,5 @@ func (s *FqdnItemService) GetAll() ([]model.Fqdn, error) {
 }
 
 func (s *FqdnItemService) TruncateIp() error {
-	return s.TruncateIp()
+	return s.repository.TruncateIp()
 }

@@ -51,12 +51,16 @@ func New(log *slog.Logger, service *service.Service) http.HandlerFunc {
 		for _, fqdn := range req.FqdnData {
 			wg.Add(1)
 			go func(fqdn string) {
+				defer wg.Done()
+
 				ips, err := service.LookupIp(fqdn)
+				if err != nil {
+					return
+				}
 				_, err = service.CreateFqdn(fqdn, ips)
 				if err != nil {
 					service.UpdateFqdn(fqdn, ips)
 				}
-				defer wg.Done()
 			}(fqdn)
 
 		}

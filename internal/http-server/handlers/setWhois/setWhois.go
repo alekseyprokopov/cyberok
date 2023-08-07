@@ -52,6 +52,7 @@ func New(log *slog.Logger, service *service.Service) http.HandlerFunc {
 		for _, domain := range req.Domains {
 			wg.Add(1)
 			go func(domain string) {
+				defer wg.Done()
 				whoisInfo, err := service.LookupWhois(domain)
 				if err != nil {
 					log.Error("invalid whois", sl.Err(err))
@@ -62,7 +63,6 @@ func New(log *slog.Logger, service *service.Service) http.HandlerFunc {
 				//	service.UpdateWhois(domain, whoisInfo)
 				//}
 
-				defer wg.Done()
 			}(domain)
 
 		}
