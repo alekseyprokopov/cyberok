@@ -10,13 +10,17 @@ import (
 	"cyberok/internal/http-server/handlers/setWhois"
 	"cyberok/internal/lib/api/logger/sl"
 	"cyberok/internal/repository"
-	"cyberok/internal/repository/postgres"
+	pg "cyberok/internal/repository/postgres"
 	"cyberok/internal/resolvers/fqdn"
 	"cyberok/internal/resolvers/whois"
 	"cyberok/internal/service"
 	"cyberok/internal/worker"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"golang.org/x/exp/slog"
 	"net/http"
@@ -38,12 +42,15 @@ func main() {
 	log := setupLogger(envLocal)
 
 	//repository
-	db, err := postgres.NewPostgresDB(cfg.DB)
+	db, err := pg.NewPostgresDB(cfg.DB)
 	if err != nil {
 		log.Error("cant init repository: ", err)
 		os.Exit(1)
 	}
 	repository := repository.NewRepository(db)
+
+	//migrations
+	runMigration(cfg, log)
 
 	//resolvers
 	whoisResolver := whois.NewWhoisResolver(cfg.DNS)
@@ -57,6 +64,7 @@ func main() {
 	services := service.New(repository, fqdnResolver, whoisResolver)
 	updateWorker := worker.NewUpdateWorker(cfg.DB, log, services)
 	updateWorker.Start()
+
 	//router
 	router := chi.NewRouter()
 
@@ -70,10 +78,10 @@ func main() {
 	router.Post("/admin/fqdn", setFqdn.New(log, services))
 	router.Post("/admin/whois", setWhois.New(log, services))
 
-	log.Info("starting server", slog.String("address", cfg.HTTPServer.Address))
+	log.Info("starting server", slog.String("port:", cfg.HTTPServer.Port))
 
 	srv := &http.Server{
-		Addr:         cfg.HTTPServer.Address,
+		Addr:         ":" + cfg.HTTPServer.Port,
 		Handler:      router,
 		ReadTimeout:  cfg.HTTPServer.Timeout,
 		WriteTimeout: cfg.HTTPServer.Timeout,
@@ -91,6 +99,7 @@ func main() {
 
 	log.Info("server started")
 
+	//Shutdown
 	<-done
 	log.Info("stopping server")
 
@@ -112,6 +121,19 @@ func main() {
 
 }
 
+func runMigration(cfg *config.Config, log *slog.Logger) {
+	m, err := migrate.New(
+		cfg.MigrationUrl,
+		fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+			cfg.DB.Username, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.DBName, cfg.DB.SSLMode))
+
+	if err != nil {
+		log.Error("cannot create new migrate instance: ", err)
+	}
+	if err := m.Up(); err != nil {
+		log.Error("failed to run migrate up: ", err)
+	}
+}
 func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 

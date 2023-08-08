@@ -54,6 +54,10 @@ func (w *UpdateWorker) Close() {
 func (w *UpdateWorker) update() {
 
 	fqdns, _ := w.service.GetAll()
+	if len(fqdns) == 0 {
+		w.log.Info("nothing tp update.")
+		return
+	}
 	err := w.service.TruncateIp()
 	if err != nil {
 		w.log.Error("truncate err", sl.Err(err))
@@ -68,7 +72,6 @@ func (w *UpdateWorker) update() {
 			if err != nil {
 				w.log.Error("can't update fqdn", sl.Err(err))
 			}
-
 		}(fqdn.Name)
 	}
 	wg.Wait()

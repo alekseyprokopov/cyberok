@@ -14,7 +14,7 @@ func NewWhoisItemService(repository repository.WhoisItem) *WhoisItemService {
 }
 
 func (s *WhoisItemService) UpdateWhois(domain string, whois string) error {
-	return s.UpdateWhois(domain, whois)
+	return s.repository.UpdateWhois(domain, whois)
 }
 
 func (s *WhoisItemService) CreateWhois(domain string, whois string) (int64, error) {

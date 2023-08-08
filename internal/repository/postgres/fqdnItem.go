@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/jackskj/carta"
 	"github.com/lib/pq"
-	"log"
 )
 
 type FqdnItemPostgres struct {
@@ -92,7 +91,6 @@ func (s *FqdnItemPostgres) GetByIPs(ips []string) ([]model.Fqdn, error) {
 	}
 
 	var result []model.Fqdn
-	log.Printf("RESULT:+++++ %v", result)
 
 	if err = carta.Map(rows, &result); err != nil {
 		return nil, fmt.Errorf("%s:carta's scan %w", op, err)
@@ -140,8 +138,6 @@ func (s *FqdnItemPostgres) GetAll() ([]model.Fqdn, error) {
 
 	var result []model.Fqdn
 	if err = carta.Map(rows, &result); err != nil {
-		fmt.Printf("ERROR %v", err)
-
 		return nil, fmt.Errorf("%s:carta's scan %w", op, err)
 	}
 

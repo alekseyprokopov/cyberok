@@ -14,7 +14,7 @@ import (
 )
 
 type Request struct {
-	Domains []string `json:"domains" validate:"required,dive,fqdn"`
+	DomainData []string `json:"domain_data" validate:"required,dive,fqdn"`
 }
 
 type Response struct {
@@ -49,7 +49,7 @@ func New(log *slog.Logger, service *service.Service) http.HandlerFunc {
 		}
 
 		wg := sync.WaitGroup{}
-		for _, domain := range req.Domains {
+		for _, domain := range req.DomainData {
 			wg.Add(1)
 			go func(domain string) {
 				defer wg.Done()
@@ -59,9 +59,9 @@ func New(log *slog.Logger, service *service.Service) http.HandlerFunc {
 					return
 				}
 				_, err = service.CreateWhois(domain, whoisInfo)
-				//if err != nil {
-				//	service.UpdateWhois(domain, whoisInfo)
-				//}
+				if err != nil {
+					service.UpdateWhois(domain, whoisInfo)
+				}
 
 			}(domain)
 

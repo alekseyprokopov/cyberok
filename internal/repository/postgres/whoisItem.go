@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/jackskj/carta"
+	"github.com/lib/pq"
 )
 
 type WhoisItemPostgres struct {
@@ -38,17 +39,19 @@ func (s *WhoisItemPostgres) UpdateWhois(domain string, whois string) error {
 
 func (s *WhoisItemPostgres) GetByDomains(domains []string) ([]model.Whois, error) {
 	const op = "repository.postgres.whoisItem.GetWhoisByDomains"
+
+	q := "SELECT domain,info FROM whois WHERE domain=ANY($1)"
+
+	rows, err := s.db.Query(q, pq.Array(domains))
+	if err != nil {
+		return nil, fmt.Errorf("%s:query exec %w", op, err)
+	}
+
 	var res []model.Whois
 
-	stmt, err := s.db.Prepare("SELECT domain,info FROM whois WHERE domain IN $1")
-	if err != nil {
-		return nil, fmt.Errorf("%s: prepare statement: %w", op, err)
+	if err = carta.Map(rows, &res); err != nil {
+		return nil, fmt.Errorf("%s:carta's scan %w", op, err)
 	}
 
-	rows, err := stmt.Query(domains)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-	carta.Map(rows, &res)
 	return res, nil
 }

@@ -1,1 +1,1 @@
-DROP TABLE whois_info;
+DROP TABLE whois;

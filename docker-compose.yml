@@ -2,13 +2,13 @@ version: '3.9'
 
 services:
   cyberok:
-    build: ./
-    command: ./wait-for-postgres.sh db ./cyberok migrate
+    build: .
+    command: ./wait-for-postgres.sh db "./cyberok"
     ports:
-      - 8000:8000
+      - "${HTTP_EXTERNAL_PORT}:8000"
     depends_on:
       - db
-      - migrate
+      #      - migrate
       - pgadmin
     environment:
       DB_PASSWORD: root
@@ -22,16 +22,7 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: cyberok_db
     ports:
-      - "5433:5432"
-
-  migrate:
-    image: migrate/migrate
-    depends_on:
-      - db
-    volumes:
-      - ./migrations:/migrations
-    command: -database postgres://postgres:root@db:5432/cyberok_db?sslmode=disable -path /migrations up
-
+      - "${DB_EXTERNAL_PORT}:5432"
 
   pgadmin:
     image: dpage/pgadmin4
@@ -39,7 +30,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: root@root.com
       PGADMIN_DEFAULT_PASSWORD: root
     ports:
-      - "5050:80"
+      - "${PG_ADMIN_PORT}:80"
 
 
 

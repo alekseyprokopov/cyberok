@@ -22,14 +22,15 @@ func MustLoad() *Config {
 }
 
 type Config struct {
-	Env         string `envconfig:"ENV"`
-	StoragePath string `envconfig:"STORAGE_PATH" env-required:"true"`
-	HTTPServer  *HTTPServerConfig
-	DB          *DBConfig
-	DNS         *DNSConfig
+	Env          string `envconfig:"ENV"`
+	StoragePath  string `envconfig:"STORAGE_PATH" env-required:"true"`
+	MigrationUrl string `envconfig:"MIGRATION_URL" env-required:"true"`
+	HTTPServer   *HTTPServerConfig
+	DB           *DBConfig
+	DNS          *DNSConfig
 }
 type HTTPServerConfig struct {
-	Address     string        `envconfig:"HTTP_SERVER_ADDRESS" env-required:"true"`
+	Port        string        `envconfig:"HTTP_SERVER_PORT" env-required:"true"`
 	Timeout     time.Duration `envconfig:"HTTP_SERVER_TIMEOUT" env-required:"true"`
 	IdleTimeout time.Duration `envconfig:"HTTP_SERVER_IDLE_TIMEOUT" env-required:"true"`
 	StopTimeout time.Duration `envconfig:"HTTP_SERVER_STOP_TIMEOUT" env-required:"true"`
