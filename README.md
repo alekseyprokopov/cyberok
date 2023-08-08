@@ -90,7 +90,7 @@ __Задача:__
 ## Получить список доменов второго уровня, вернуть для каждого домена whois информацию.
 ### Request
 
-`Post /fqdn`
+`Post /whois`
 
     {
       "domain_data": ["google.com", "amazon.com"]
